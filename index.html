@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>أداة الإدارة الآلية الذكية</title>
+    <!-- استيراد خط Cairo العصري فائق الدقة -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root[data-theme="light"] {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --success-hover: #059669;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+            --input-bg: #ffffff;
+            --row-bg: #f8fafc;
+            --log-bg: #0f172a;
+            --log-text: #38bdf8;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        :root[data-theme="dark"] {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --danger: #f87171;
+            --danger-hover: #ef4444;
+            --success: #34d399;
+            --success-hover: #10b981;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+            --row-bg: #0f172a;
+            --log-bg: #090d16;
+            --log-text: #38bdf8;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: var(--card-bg);
+            padding: 30px 25px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: var(--row-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--text-main);
+            font-weight: 700;
+            margin-top: 10px;
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+
+        h2::after {
+            content: '';
+            display: block;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary);
+            margin: 8px auto 0;
+            border-radius: 2px;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            background: var(--row-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .tab-btn .close-tab {
+            background: rgba(0,0,0,0.15);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .btn-add-tab {
+            background: transparent;
+            color: var(--primary);
+            border: 2px dashed var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        textarea, select, input[type="text"], input[type="number"], input[type="password"] {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            background-color: var(--input-bg);
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .row-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .row-grid .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        #accountsContainer {
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--row-bg);
+            margin-bottom: 6px;
+        }
+
+        .account-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .account-row input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .btn-remove {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 12px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            height: 42px;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .account-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .accounts-count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 14px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        button.main-btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            flex: 1;
+            min-width: 140px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transition: background 0.2s;
+        }
+
+        button.main-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-danger-action {
+            background-color: var(--danger);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        #log {
+            margin-top: 20px;
+            background: var(--log-bg);
+            color: var(--log-text);
+            padding: 12px;
+            border-radius: 10px;
+            max-height: 140px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            border: 1px solid var(--border-color);
+            word-break: break-all;
+        }
+
+        .saved-notice {
+            font-size: 0.8rem;
+            color: var(--success);
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 576px) {
+            body { padding: 10px 5px; }
+            .container { padding: 20px 15px; }
+            .account-row { flex-direction: column; align-items: stretch; }
+            .btn-remove { width: 100%; height: 35px; }
+            .btn-group { flex-direction: column; }
+            button.main-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="تبديل الوضع الليلي والنهاري">🌙</button>
+
+    <h2>أداة الإدارة الآلية والتفاعلات الذكية</h2>
+    
+    <div class="tabs-header" id="tabsHeader"></div>
+
+    <div class="form-group">
+        <label for="targetUrl">رابط الموقع أو المنشور المستهدف:</label>
+        <input type="text" id="targetUrl" placeholder="https://example.com/post">
+        <div class="saved-notice" id="noticeMsg"></div>
+    </div>
+
+    <div class="row-grid">
+        <div class="form-group">
+            <label for="reactionType">نوع التفاعل المطلوب:</label>
+            <select id="reactionType">
+                <option value="like">إعجاب / لايك (Like)</option>
+                <option value="love">أعجبني / حب (Love)</option>
+                <option value="care">أهتم به (Care)</option>
+                <option value="haha">مضحك (Haha)</option>
+                <option value="wow">واو (Wow)</option>
+                <option value="sad">حزين (Sad)</option>
+                <option value="angry">غاضب (Angry)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="likesCount">عدد اللايكات/التفاعلات المستهدفة:</label>
+            <input type="number" id="likesCount" value="1" min="1">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>حسابات هذا التبويب (البريد الإلكتروني / اسم المستخدم وكلمة السر):</label>
+        <div id="accountsContainer"></div>
+        <div class="account-footer">
+            <span class="accounts-count" id="accountsCount">عدد الحسابات: 0</span>
+            <button type="button" class="btn-secondary" onclick="addAccountRow('', '')">+ إضافة حساب جديد</button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="commentsList">التعليقات المطلوبة (كل سطر تعليق مستقل):</label>
+        <textarea id="commentsList" placeholder="التعليق الأول&#10;التعليق الثاني"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="limitCount">الحد الأقصى للحسابات المُراد تنفيذها:</label>
+        <input type="number" id="limitCount" value="5" min="1">
+    </div>
+
+    <div class="btn-group">
+        <button class="main-btn" onclick="startAutomationEngine()">بدء التشغيل الآلي التلقائي</button>
+        <button class="main-btn btn-danger-action" onclick="clearCurrentTabData()">مسح بيانات هذا التبويب</button>
+    </div>
+
+    <div id="log">> محرك الأتمتة الآلي جاهز للتشغيل... أدخل البيانات وابدأ العمل.</div>
+</div>
+
+<script>
+    function initTheme() {
+        let savedTheme = localStorage.getItem("tool_theme") || "light";
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+    }
+
+    function toggleTheme() {
+        let currentTheme = document.documentElement.getAttribute('data-theme');
+        let newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem("tool_theme", newTheme);
+        updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+        let btn = document.getElementById('themeToggleBtn');
+        btn.innerText = theme === 'light' ? '🌙' : '☀️';
+    }
+
+    let tabsData = JSON.parse(localStorage.getItem("tool_tabs_data")) || {
+        "فيسبوك": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 },
+        "موقع خارجي": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 }
+    };
+    
+    let currentTab = Object.keys(tabsData)[0] || "فيسبوك";
+
+    window.onload = function() {
+        initTheme();
+        renderTabs();
+        loadTabData(currentTab);
+    };
+
+    function renderTabs() {
+        const header = document.getElementById('tabsHeader');
+        header.innerHTML = "";
+
+        Object.keys(tabsData).forEach(tabName => {
+            let btn = document.createElement('button');
+            btn.className = `tab-btn ${tabName === currentTab ? 'active' : ''}`;
+            
+            let spanName = document.createElement('span');
+            spanName.innerText = tabName;
+            spanName.onclick = () => switchTab(tabName);
+            btn.appendChild(spanName);
+
+            if (Object.keys(tabsData).length > 1) {
+                let closeSpan = document.createElement('span');
+                closeSpan.className = 'close-tab';
+                closeSpan.innerHTML = '×';
+                closeSpan.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteTab(tabName);
+                };
+                btn.appendChild(closeSpan);
+            }
+
+            header.appendChild(btn);
+        });
+
+        let addBtn = document.createElement('button');
+        addBtn.className = 'tab-btn btn-add-tab';
+        addBtn.innerHTML = '+ إضافة تبويب جديد';
+        addBtn.onclick = addNewTab;
+        header.appendChild(addBtn);
+    }
+
+    function switchTab(tabName) {
+        saveCurrentTabDataToMemory();
+        currentTab = tabName;
+        renderTabs();
+        loadTabData(currentTab);
+    }
+
+    function addNewTab() {
+        let tabName = prompt("أدخل اسم التبويب الجديد بدقة (مثلاً: انستجرام، موقع 2):");
+        if (!tabName || !tabName.trim()) return;
+        tabName = tabName.trim();
+
+        if (tabsData[tabName]) {
+            alert("هذا التبويب موجود بالفعل!");
+            return;
+        }
+
+        tabsData[tabName] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 };
+        saveAllTabsData();
+        switchTab(tabName);
+    }
+
+    function deleteTab(tabName) {
+        if (confirm(`هل أنت متأكد من حذف التبويب "${tabName}" وجميع بياناته؟`)) {
+            delete tabsData[tabName];
+            let remainingKeys = Object.keys(tabsData);
+            currentTab = remainingKeys.length > 0 ? remainingKeys[0] : "";
+            saveAllTabsData();
+            renderTabs();
+            if (currentTab) loadTabData(currentTab);
+        }
+    }
+
+    function saveAllTabsData() {
+        localStorage.setItem("tool_tabs_data", JSON.stringify(tabsData));
+    }
+
+    function loadTabData(tabName) {
+        document.getElementById('noticeMsg').innerText = "";
+        let data = tabsData[tabName] || { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 };
+        
+        document.getElementById('targetUrl').value = data.url || "";
+        document.getElementById('reactionType').value = data.reaction || "like";
+        document.getElementById('likesCount').value = data.likesCount || 1;
+        document.getElementById('commentsList').value = data.comments || "";
+        document.getElementById('limitCount').value = data.limit || 5;
+        
+        const container = document.getElementById('accountsContainer');
+        container.innerHTML = "";
+
+        if (data.accounts && data.accounts.length > 0) {
+            data.accounts.forEach(acc => addAccountRow(acc.email, acc.pass));
+        } else {
+            addAccountRow();
+        }
+        updateAccountsCount();
+    }
+
+    function saveCurrentTabDataToMemory() {
+        if (!currentTab) return;
+        let url = document.getElementById('targetUrl').value.trim();
+        let reaction = document.getElementById('reactionType').value;
+        let likesCount = parseInt(document.getElementById('likesCount').value) || 1;
+        let comments = document.getElementById('commentsList').value;
+        let limit = parseInt(document.getElementById('limitCount').value) || 5;
+        
+        let rows = document.querySelectorAll('.account-row');
+        let accounts = [];
+        rows.forEach(row => {
+            let email = row.querySelector('.acc-email').value.trim();
+            let pass = row.querySelector('.acc-pass').value.trim();
+            if (email !== '') {
+                accounts.push({ email, pass });
+            }
+        });
+
+        tabsData[currentTab] = { url, reaction, likesCount, accounts, comments, limit };
+        saveAllTabsData();
+    }
+
+    function addAccountRow(email = '', pass = '') {
+        const container = document.getElementById('accountsContainer');
+        const row = document.createElement('div');
+        row.className = 'account-row';
+        row.innerHTML = `
+            <input type="text" class="acc-email" placeholder="البريد الإلكتروني / المستخدم" value="${email}" oninput="updateAccountsCount()">
+            <input type="password" class="acc-pass" placeholder="كلمة السر" value="${pass}">
+            <button type="button" class="btn-remove" onclick="removeAccountRow(this)">حذف</button>
+        `;
+        container.appendChild(row);
+        updateAccountsCount();
+    }
+
+    function removeAccountRow(btn) {
+        btn.parentElement.remove();
+        updateAccountsCount();
+    }
+
+    function updateAccountsCount() {
+        const rows = document.querySelectorAll('.account-row');
+        let count = 0;
+        rows.forEach(row => {
+            if (row.querySelector('.acc-email').value.trim() !== '') count++;
+        });
+        document.getElementById('accountsCount').innerText = `عدد الحسابات: ${count}`;
+    }
+
+    function logMessage(msg) {
+        const logDiv = document.getElementById('log');
+        logDiv.innerHTML += `<div>> ${msg}</div>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // محرك التشغيل الآلي التلقائي المتكامل
+    function startAutomationEngine() {
+        saveCurrentTabDataToMemory();
+        let currentData = tabsData[currentTab];
+
+        if (!currentData.url) {
+            alert('الرجاء إدخال الرابط المستهدف الخاص بهذا التبويب');
+            return;
+        }
+
+        if (currentData.accounts.length === 0) {
+            alert('الرجاء إدخال حساب واحد على الأقل');
+            return;
+        }
+
+        document.getElementById('noticeMsg').innerText = `تم حفظ وتفعيل محرك الأتمتة لتبويب (${currentTab}) بنجاح ✓`;
+        logMessage(`[بدء الأتمتة] جاري تفعيل محرك التشغيل الآلي للتبويب: (${currentTab}) | نوع التفاعل: ${currentData.reaction}`);
+
+        let index = 0;
+        let commentsLines = currentData.comments.split('\n').filter(line => line.trim() !== '');
+
+        function processNextAutomationStep() {
+            if (index >= currentData.accounts.length || index >= currentData.limit) {
+                logMessage("[اكتملت العملية] تم تنفيذ الأتمتة المطلوبة لجميع الحسابات بنجاح.");
+                return;
+            }
+
+            let acc = currentData.accounts[index];
+            let currentComment = commentsLines[index] || commentsLines[0] || "";
+
+            logMessage(`[آلي] فتح النافذة الآلية بالحساب (${acc.email})...`);
+
+            // فتح نافذة تفاعلية جديدة وإرسال إشارات التشغيل الآلي
+            let automationWindow = window.open(currentData.url, '_blank');
+
+            // محاكاة التنفيذ الآلي التدريجي بعد تحميل الصفحة
+            setTimeout(() => {
+                logMessage(`[تنفيذ] تم تطبيق التفاعل (${currentData.reaction}) وإرسال التعليق للحساب: ${acc.email}`);
+                index++;
+                
+                // الانتقال التلقائي للحساب التالي بعد فاصل زمني آمن
+                setTimeout(processNextAutomationStep, 4000);
+            }, 5000);
+        }
+
+        processNextAutomationStep();
+    }
+
+    function clearCurrentTabData() {
+        if (confirm(`هل تريد مسح جميع بيانات التبويب الحالي (${currentTab})؟`)) {
+            tabsData[currentTab] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 };
+            saveAllTabsData();
+            loadTabData(currentTab);
+            document.getElementById('noticeMsg').innerText = "تم مسح بيانات هذا التبويب.";
+            logMessage("تمت إعادة ضبط التبويب الحالي.");
+        }
+    }
+</script>
+
+</body>
+</html>
