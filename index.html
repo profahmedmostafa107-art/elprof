@@ -416,7 +416,6 @@
             background-color: var(--success-hover);
         }
 
-        /* تنسيق نتيجة النسبة المئوية وزر إعادة المحاولة التلقائي */
         .result-box {
             margin-top: 15px;
             padding: 12px;
@@ -531,7 +530,6 @@
         </div>
     </div>
 
-    <!-- نافذة الطالب الإجبارية مع عرض النسبة المئوية وإعادة المحاولة التلقائية للموبايل -->
     <div class="student-exam-box">
         <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 نظام الامتحان الذكي والتصحيح الآلي للطلاب:</label>
         <p style="font-size: 0.85rem; color: var(--danger); font-weight: 600; margin-top: 0;">⚠️ ممنوع الخروج من الصفحة أو التراجع حتى يتم إرسال وتسليم إجاباتك.</p>
@@ -611,7 +609,6 @@
         enforceStrictMobileLock();
     };
 
-    // نظام قفل أمني شامل لمنع الهواتف والمتصفحات من التراجع والخروج نهائياً
     function enforceStrictMobileLock() {
         history.pushState(null, null, window.location.href);
         history.pushState(null, null, window.location.href);
@@ -631,11 +628,9 @@
         };
     }
 
-    // دالة تسليم الواجب أو الامتحان مع حساب النسبة المئوية وتفعيل زر إعادة المحاولة تلقائياً إذا كانت أقل من 70%
     function submitStudentMandatoryExam() {
-        // حساب النسبة المئوية (محاكاة ذكية لاختيار الطالب استناداً إلى زر الاختيار المحدد)
         let choice1 = document.getElementById('choice1');
-        let scorePercent = choice1.checked ? 100 : 40; // إذا اختار الأولى يحصل على 100% وإلا 40% للتجربة
+        let scorePercent = choice1.checked ? 100 : 40; 
 
         let resultBox = document.getElementById('resultDisplayBox');
         let retryBtn = document.getElementById('retryExamBtn');
@@ -662,14 +657,20 @@
         }
     }
 
-    // دالة إعادة المحاولة للطالب الحاصل على أقل من 70%
+    // تصحيح دالة إعادة المحاولة لتفتح الواجب وتمكن الطالب من التفاعل مجدداً
     function retryExamAction() {
         document.getElementById('resultDisplayBox').style.display = "none";
         document.getElementById('retryExamBtn').style.display = "none";
-        document.getElementById('submitExamBtn').style.display = "block";
+        let submitBtn = document.getElementById('submitExamBtn');
+        submitBtn.style.display = "block";
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "1";
+        
+        // إعادة تهيئة خيارات الإجابات لتكون مفعلة ومتاحة للطالب
         document.getElementById('choice1').checked = true;
-        logMessage("[إعادة محاولة] قام الطالب بإعادة محاولة الامتحان من جديد.");
-        alert("تمت إعادة ضبط الامتحان، يمكنك المحاولة مرة أخرى الآن.");
+        
+        logMessage("[إعادة المحاولة] تم فتح وإعادة إتاحة الواجب للطالب ليقوم بالحل من جديد.");
+        alert("تم فتح الواجب مجدداً، قم بالإجابة ثم اضغط على زر التسليم.");
     }
 
     function openWhatsAppChat() {
