@@ -390,7 +390,6 @@
             box-shadow: none;
         }
 
-        /* تنسيق زر الإجبار على تسليم الواجب للطالب (إلغاء زر العودة نهائياً) */
         .student-exam-box {
             background: var(--row-bg);
             border: 2px solid var(--primary);
@@ -443,7 +442,6 @@
         <div class="saved-notice" id="noticeMsg"></div>
     </div>
 
-    <!-- قسم فتح شات الواتساب مباشرة برقم غير مسجل -->
     <div class="whatsapp-section">
         <label style="color: var(--success); margin-bottom: 8px;">💬 فتح محادثة WhatsApp مباشرة (بدون حفظ الرقم):</label>
         <div class="row-grid">
@@ -505,10 +503,10 @@
         </div>
     </div>
 
-    <!-- نافذة الطالب الإجبارية (بدون زر عودة - زر تسليم فقط) -->
+    <!-- نافذة الطالب الإجبارية (قفل العودة وتسليم نهائي فقط) -->
     <div class="student-exam-box">
-        <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 واجهة الواجب الإجبارية للطالب:</label>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0;">أنت الآن في وضع حل الواجب الإجباري (لا يمكن العودة، يجب تسليم الإجابات النهائية).</p>
+        <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 وضع الامتحان الإجباري للطلاب:</label>
+        <p style="font-size: 0.85rem; color: var(--danger); font-weight: 600; margin-top: 0;">⚠️ تم قفل زر العودة نهائياً. لا يمكنك الخروج إلا بعد الضغط على زر التسليم النهائي.</p>
         <button type="button" class="mandatory-submit-btn" onclick="submitStudentMandatoryExam()">تسليم الإجابات النهائية للواجب</button>
     </div>
 
@@ -529,7 +527,6 @@
         </div>
     </div>
 
-    <!-- قسم الحفظ السحابي، والحذف، والإخفاء التلقائي للطالب -->
     <div class="cloud-section">
         <label style="color: var(--primary); margin-bottom: 10px;">☁️ نظام الحفظ السحابي وإدارة النشر للطلاب (حذف / إخفاء):</label>
         <div class="btn-group" style="margin-top: 5px;">
@@ -580,7 +577,18 @@
         renderTabs();
         loadTabData(currentTab);
         checkAssignmentAutoSubmitOnRefresh();
+        lockBrowserBackButton();
     };
+
+    // كود منع استخدام زر العودة في المتصفح أو الموبايل (حظر الخروج نهائياً)
+    function lockBrowserBackButton() {
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+            alert("تنبيه: لا يمكنك العودة أو الخروج من الواجب قبل تسليم الإجابات النهائية!");
+            logMessage("[قفل أمني] حاول الطالب الضغط على زر العودة وتم منعه.");
+        };
+    }
 
     function checkAssignmentAutoSubmitOnRefresh() {
         let sessionOpened = sessionStorage.getItem("assignment_opened");
@@ -592,11 +600,12 @@
         }
     }
 
-    // دالة تسليم الواجب الإجباري للطالب
     function submitStudentMandatoryExam() {
         sessionStorage.setItem("assignment_submitted", "true");
-        logMessage("[تسليم إجباري] تم إرسال وتسليم إجابات الواجب النهائية بنجاح للطالب ولا يمكن التراجع.");
-        alert("تم تسليم الإجابات النهائية للواجب بنجاح!");
+        // إزالة الحظر المؤقت بعد التسليم الناجح للسماح للطالب بالخروج بأمان
+        window.onpopstate = null;
+        logMessage("[تسليم إجباري] تم إرسال وتسليم إجابات الواجب النهائية بنجاح للطالب.");
+        alert("تم تسليم الإجابات النهائية للواجب بنجاح! شكراً لك.");
     }
 
     function openWhatsAppChat() {
