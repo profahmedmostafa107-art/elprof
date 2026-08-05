@@ -346,7 +346,6 @@
             margin-top: 20px;
         }
 
-        /* تنسيق خانة الاختيار بجانب نص الإجابة مباشرة متجاوب مع الموبايل */
         .answer-option-row {
             display: flex;
             align-items: center;
@@ -465,7 +464,6 @@
         <textarea id="commentsList" placeholder="التعليق الأول&#10;التعليق الثاني"></textarea>
     </div>
 
-    <!-- قسم عرض خيارات الإجابات بخانات اختيار مجاورة للموبايل -->
     <div class="form-group">
         <label>خيارات الإجابات (خانة الاختيار بجانب الإجابة مباشرة متجاوبة للموبايل):</label>
         <div id="answersOptionsContainer">
@@ -497,11 +495,14 @@
         </div>
     </div>
 
+    <!-- قسم الحفظ السحابي، والحذف، والإخفاء التلقائي للطالب -->
     <div class="cloud-section">
-        <label style="color: var(--primary); margin-bottom: 10px;">☁️ نظام الحفظ السحابي ونشر الواجبات والامتحانات للطلاب:</label>
+        <label style="color: var(--primary); margin-bottom: 10px;">☁️ نظام الحفظ السحابي وإدارة النشر للطلاب (حذف / إخفاء):</label>
         <div class="btn-group" style="margin-top: 5px;">
             <button class="main-btn" type="button" onclick="saveToCloudStorage()">حفظ ونشر على السحابة للطلاب</button>
             <button class="main-btn btn-secondary" type="button" onclick="fetchCloudData()">جلب البيانات المحدثة</button>
+            <button class="main-btn" type="button" style="background-color: #d97706;" onclick="hideExamForStudents()">إخفاء عن الطلاب</button>
+            <button class="main-btn btn-danger-action" type="button" onclick="deleteExamForStudents()">حذف من عند الطلاب نهائياً</button>
         </div>
     </div>
 
@@ -534,8 +535,8 @@
     }
 
     let tabsData = JSON.parse(localStorage.getItem("tool_tabs_data")) || {
-        "فيسبوك": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" },
-        "موقع خارجي": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" }
+        "فيسبوك": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all", status: "active" },
+        "موقع خارجي": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all", status: "active" }
     };
     
     let currentTab = Object.keys(tabsData)[0] || "فيسبوك";
@@ -547,7 +548,6 @@
         checkAssignmentAutoSubmitOnRefresh();
     };
 
-    // ميزة تسليم الواجب تلقائياً عند قيام الطالب بعمل تحديث (Refresh) للصفحة أثناء فتح الواجب
     function checkAssignmentAutoSubmitOnRefresh() {
         let sessionOpened = sessionStorage.getItem("assignment_opened");
         if (sessionOpened && !sessionStorage.getItem("assignment_submitted")) {
@@ -558,7 +558,6 @@
         }
     }
 
-    // وظيفة فتح شات الواتساب مباشرة برقم غير مسجل
     function openWhatsAppChat() {
         let phoneInput = document.getElementById('waPhoneNumber').value.trim();
         let msgInput = document.getElementById('waMessageText').value.trim();
@@ -568,7 +567,6 @@
             return;
         }
 
-        // تنظيف الرقم من أي رموز زائدة
         let cleanPhone = phoneInput.replace(/\D/g, '');
         let waUrl = `https://wa.me/${cleanPhone}`;
         
@@ -631,7 +629,7 @@
             return;
         }
 
-        tabsData[tabName] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" };
+        tabsData[tabName] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all", status: "active" };
         saveAllTabsData();
         switchTab(tabName);
     }
@@ -653,8 +651,15 @@
 
     function loadTabData(tabName) {
         document.getElementById('noticeMsg').innerText = "";
-        let data = tabsData[tabName] || { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" };
+        let data = tabsData[tabName] || { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all", status: "active" };
         
+        // التحقق مما إذا كان الامتحان محذوفاً أو مخفياً عن الطالب
+        if (data.status === "deleted") {
+            document.getElementById('noticeMsg').innerText = "⚠️ هذا الامتحان/الواجب محذوف وغير مرئي للطلاب.";
+        } else if (data.status === "hidden") {
+            document.getElementById('noticeMsg').innerText = "🔒 هذا الامتحان/الواجب مخفي حالياً عن الطلاب.";
+        }
+
         document.getElementById('targetUrl').value = data.url || "";
         document.getElementById('reactionType').value = data.reaction || "like";
         document.getElementById('likesCount').value = data.likesCount || 1;
@@ -681,6 +686,7 @@
         let comments = document.getElementById('commentsList').value;
         let limit = parseInt(document.getElementById('limitCount').value) || 5;
         let filter = document.getElementById('studentFilter').value;
+        let currentStatus = tabsData[currentTab] ? (tabsData[currentTab].status || "active") : "active";
         
         let rows = document.querySelectorAll('.account-row');
         let accounts = [];
@@ -692,7 +698,7 @@
             }
         });
 
-        tabsData[currentTab] = { url, reaction, likesCount, accounts, comments, limit, filter };
+        tabsData[currentTab] = { url, reaction, likesCount, accounts, comments, limit, filter, status: currentStatus };
         saveAllTabsData();
     }
 
@@ -732,20 +738,65 @@
     function saveToCloudStorage() {
         saveCurrentTabDataToMemory();
         let currentData = tabsData[currentTab];
+        currentData.status = "active"; // إعادة تفعيل عند الحفظ
         let selectedFilter = document.getElementById('studentFilter').value;
 
         let cloudPackage = {
             tabName: currentTab,
             filterGroup: selectedFilter,
             examData: currentData,
+            status: "active",
             timestamp: new Date().toISOString()
         };
 
         localStorage.setItem(`cloud_published_${currentTab}_${selectedFilter}`, JSON.stringify(cloudPackage));
         
-        logMessage(`[السحابة] تم رفع وحفظ الامتحانات والواجبات الخاصة بـ (${currentTab}) بنجاح.`);
-        logMessage(`[النشر للطلاب] تم فلترة ونشر المحتوى بنجاح للفئة: (${selectedFilter}) للطلاب.`);
-        document.getElementById('noticeMsg').innerText = `تم الحفظ السحابي ونشر المحتوى بنجاح للطلاب (فلترة: ${selectedFilter}) ✓`;
+        logMessage(`[السحابة] تم رفع ونشر الامتحانات والواجبات الخاصة بـ (${currentTab}) بنجاح للطلاب.`);
+        document.getElementById('noticeMsg').innerText = `تم الحفظ السحابي ونشر المحتوى بنجاح للطلاب ✓`;
+    }
+
+    // ميزة إخفاء الامتحان/الواجب عن الطلاب سحابياً
+    function hideExamForStudents() {
+        saveCurrentTabDataToMemory();
+        let selectedFilter = document.getElementById('studentFilter').value;
+        if (tabsData[currentTab]) {
+            tabsData[currentTab].status = "hidden";
+            saveAllTabsData();
+        }
+
+        let cloudPackage = {
+            tabName: currentTab,
+            filterGroup: selectedFilter,
+            status: "hidden",
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(`cloud_published_${currentTab}_${selectedFilter}`, JSON.stringify(cloudPackage));
+
+        logMessage(`[إخفاء] تم إخفاء هذا الامتحان/الواجب عن الطلاب سحابياً للفئة (${selectedFilter}).`);
+        document.getElementById('noticeMsg').innerText = "تم إخفاء الامتحان/الواجب عن الطلاب بنجاح 🔒";
+    }
+
+    // ميزة حذف الامتحان/الواجب من عند الطلاب سحابياً نهائياً
+    function deleteExamForStudents() {
+        if (confirm("هل أنت متأكد من حذف هذا الامتحان/الواجب نهائياً من عند الطلاب؟")) {
+            saveCurrentTabDataToMemory();
+            let selectedFilter = document.getElementById('studentFilter').value;
+            if (tabsData[currentTab]) {
+                tabsData[currentTab].status = "deleted";
+                saveAllTabsData();
+            }
+
+            let cloudPackage = {
+                tabName: currentTab,
+                filterGroup: selectedFilter,
+                status: "deleted",
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem(`cloud_published_${currentTab}_${selectedFilter}`, JSON.stringify(cloudPackage));
+
+            logMessage(`[حذف سحابي] تم حذف الامتحان/الواجب من عند الطلاب نهائياً.`);
+            document.getElementById('noticeMsg').innerText = "تم حذف الامتحان/الواجب من عند الطلاب نهائياً 🗑️";
+        }
     }
 
     function fetchCloudData() {
@@ -754,8 +805,16 @@
         
         if (cloudDataRaw) {
             let parsed = JSON.parse(cloudDataRaw);
-            logMessage(`[مزامنة السحابة] تم استرجاع أحدث بيانات الامتحانات والواجبات المفلترة للفئة (${selectedFilter}).`);
-            alert("تم جلب البيانات السحابية المحدثة بنجاح!");
+            if (parsed.status === "deleted") {
+                alert("تنبيه: هذا الامتحان/الواجب تم حذفه من لوحة المعلم!");
+                logMessage(`[مزامنة السحابة] محاولة جلب بيانات لامتحان محذوف.`);
+            } else if (parsed.status === "hidden") {
+                alert("تنبيه: هذا الامتحان/الواجب مخفي حالياً عن الطلاب.");
+                logMessage(`[مزامنة السحابة] الامتحان الحالي مخفي عن الطلاب.`);
+            } else {
+                logMessage(`[مزامنة السحابة] تم استرجاع أحدث بيانات الامتحانات والواجبات المفلترة للفئة (${selectedFilter}).`);
+                alert("تم جلب البيانات السحابية المحدثة بنجاح!");
+            }
         } else {
             logMessage(`[مزامنة السحابة] لا توجد بيانات سحابية محفوظة مسبقاً لهذا التبويب مع هذه الفلترة.`);
             alert("لا توجد بيانات سحابية محفوظة لهذه الفلترة بعد.");
@@ -808,7 +867,7 @@
 
     function clearCurrentTabData() {
         if (confirm(`هل تريد مسح جميع بيانات التبويب الحالي (${currentTab})؟`)) {
-            tabsData[currentTab] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" };
+            tabsData[currentTab] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all", status: "active" };
             saveAllTabsData();
             loadTabData(currentTab);
             document.getElementById('noticeMsg').innerText = "تم مسح بيانات هذا التبويب.";
