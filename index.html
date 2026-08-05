@@ -338,30 +338,47 @@
             margin-top: 20px;
         }
 
-        /* تنسيق خيارات الإجابات لتكون خانة الاختيار بجانب النص تماماً */
+        /* تنسيق خانة الاختيار بجانب نص الإجابة مباشرة متجاوب مع الموبايل */
         .answer-option-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+            gap: 12px;
+            margin-bottom: 10px;
             background: var(--input-bg);
-            padding: 8px 12px;
+            padding: 10px 14px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .answer-option-row input[type="radio"], .answer-option-row input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+
+        .answer-option-row input[type="radio"], 
+        .answer-option-row input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
             cursor: pointer;
             accent-color: var(--primary);
+            flex-shrink: 0;
+            margin: 0;
         }
+
+        .answer-option-row label {
+            flex: 1;
+            margin: 0;
+            font-weight: 500;
+            cursor: pointer;
+            word-break: break-word;
+        }
+
         .answer-option-row input[type="text"] {
             flex: 1;
             border: none;
             background: transparent;
             padding: 4px;
             box-shadow: none;
+            margin: 0;
         }
+
         .answer-option-row input[type="text"]:focus {
             box-shadow: none;
         }
@@ -373,6 +390,7 @@
             .btn-remove { width: 100%; height: 35px; }
             .btn-group { flex-direction: column; }
             button.main-btn { width: 100%; }
+            .answer-option-row { padding: 8px 10px; gap: 8px; }
         }
     </style>
 </head>
@@ -425,17 +443,17 @@
         <textarea id="commentsList" placeholder="التعليق الأول&#10;التعليق الثاني"></textarea>
     </div>
 
-    <!-- قسم معاينة وتنسيق خانات الإجابات المجاورة -->
+    <!-- قسم عرض خيارات الإجابات بخانات اختيار مجاورة للموبايل -->
     <div class="form-group">
-        <label>خيارات الإجابات المتاحة (خانة الاختيار بجانب الإجابة مباشرة):</label>
+        <label>خيارات الإجابات (خانة الاختيار بجانب الإجابة مباشرة متجاوبة للموبايل):</label>
         <div id="answersOptionsContainer">
             <div class="answer-option-row">
-                <input type="radio" name="examChoice" checked title="حدد الإجابة الصحيحة">
-                <input type="text" placeholder="اكتب نص الإجابة الأولى هنا..." value="الإجابة الأولى">
+                <input type="radio" name="examChoice" id="choice1" checked>
+                <label for="choice1"><input type="text" value="الإجابة الأولى"></label>
             </div>
             <div class="answer-option-row">
-                <input type="radio" name="examChoice" title="حدد الإجابة الصحيحة">
-                <input type="text" placeholder="اكتب نص الإجابة الثانية هنا..." value="الإجابة الثانية">
+                <input type="radio" name="examChoice" id="choice2">
+                <label for="choice2"><input type="text" value="الإجابة الثانية"></label>
             </div>
         </div>
     </div>
@@ -504,7 +522,19 @@
         initTheme();
         renderTabs();
         loadTabData(currentTab);
+        checkAssignmentAutoSubmitOnRefresh();
     };
+
+    // ميزة تسليم الواجب تلقائياً عند قيام الطالب بعمل تحديث (Refresh) للصفحة أثناء فتح الواجب
+    function checkAssignmentAutoSubmitOnRefresh() {
+        let sessionOpened = sessionStorage.getItem("assignment_opened");
+        if (sessionOpened && !sessionStorage.getItem("assignment_submitted")) {
+            sessionStorage.setItem("assignment_submitted", "true");
+            logMessage("[تسليم تلقائي] قام الطالب بعمل تحديث (Refresh) للصفحة وتم تسليم الواجب بنجاح سحابياً!");
+        } else {
+            sessionStorage.setItem("assignment_opened", "true");
+        }
+    }
 
     function renderTabs() {
         const header = document.getElementById('tabsHeader');
