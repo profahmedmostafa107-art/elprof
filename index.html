@@ -390,6 +390,33 @@
             box-shadow: none;
         }
 
+        /* تنسيق زر الإجبار على تسليم الواجب للطالب (إلغاء زر العودة نهائياً) */
+        .student-exam-box {
+            background: var(--row-bg);
+            border: 2px solid var(--primary);
+            padding: 20px;
+            border-radius: 14px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .mandatory-submit-btn {
+            background-color: var(--success);
+            color: white;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            margin-top: 15px;
+            font-family: 'Cairo', sans-serif;
+        }
+        .mandatory-submit-btn:hover {
+            background-color: var(--success-hover);
+        }
+
         @media (max-width: 576px) {
             body { padding: 10px 5px; }
             .container { padding: 20px 15px; }
@@ -478,7 +505,14 @@
         </div>
     </div>
 
-    <div class="row-grid">
+    <!-- نافذة الطالب الإجبارية (بدون زر عودة - زر تسليم فقط) -->
+    <div class="student-exam-box">
+        <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 واجهة الواجب الإجبارية للطالب:</label>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0;">أنت الآن في وضع حل الواجب الإجباري (لا يمكن العودة، يجب تسليم الإجابات النهائية).</p>
+        <button type="button" class="mandatory-submit-btn" onclick="submitStudentMandatoryExam()">تسليم الإجابات النهائية للواجب</button>
+    </div>
+
+    <div class="row-grid" style="margin-top: 18px;">
         <div class="form-group">
             <label for="limitCount">الحد الأقصى للحسابات المُراد تنفيذها:</label>
             <input type="number" id="limitCount" value="5" min="1">
@@ -556,6 +590,13 @@
         } else {
             sessionStorage.setItem("assignment_opened", "true");
         }
+    }
+
+    // دالة تسليم الواجب الإجباري للطالب
+    function submitStudentMandatoryExam() {
+        sessionStorage.setItem("assignment_submitted", "true");
+        logMessage("[تسليم إجباري] تم إرسال وتسليم إجابات الواجب النهائية بنجاح للطالب ولا يمكن التراجع.");
+        alert("تم تسليم الإجابات النهائية للواجب بنجاح!");
     }
 
     function openWhatsAppChat() {
@@ -653,7 +694,6 @@
         document.getElementById('noticeMsg').innerText = "";
         let data = tabsData[tabName] || { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all", status: "active" };
         
-        // التحقق مما إذا كان الامتحان محذوفاً أو مخفياً عن الطالب
         if (data.status === "deleted") {
             document.getElementById('noticeMsg').innerText = "⚠️ هذا الامتحان/الواجب محذوف وغير مرئي للطلاب.";
         } else if (data.status === "hidden") {
@@ -738,7 +778,7 @@
     function saveToCloudStorage() {
         saveCurrentTabDataToMemory();
         let currentData = tabsData[currentTab];
-        currentData.status = "active"; // إعادة تفعيل عند الحفظ
+        currentData.status = "active";
         let selectedFilter = document.getElementById('studentFilter').value;
 
         let cloudPackage = {
@@ -755,7 +795,6 @@
         document.getElementById('noticeMsg').innerText = `تم الحفظ السحابي ونشر المحتوى بنجاح للطلاب ✓`;
     }
 
-    // ميزة إخفاء الامتحان/الواجب عن الطلاب سحابياً
     function hideExamForStudents() {
         saveCurrentTabDataToMemory();
         let selectedFilter = document.getElementById('studentFilter').value;
@@ -776,7 +815,6 @@
         document.getElementById('noticeMsg').innerText = "تم إخفاء الامتحان/الواجب عن الطلاب بنجاح 🔒";
     }
 
-    // ميزة حذف الامتحان/الواجب من عند الطلاب سحابياً نهائياً
     function deleteExamForStudents() {
         if (confirm("هل أنت متأكد من حذف هذا الامتحان/الواجب نهائياً من عند الطلاب؟")) {
             saveCurrentTabDataToMemory();
