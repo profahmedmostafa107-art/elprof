@@ -338,6 +338,34 @@
             margin-top: 20px;
         }
 
+        /* تنسيق خيارات الإجابات لتكون خانة الاختيار بجانب النص تماماً */
+        .answer-option-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            background: var(--input-bg);
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .answer-option-row input[type="radio"], .answer-option-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+        .answer-option-row input[type="text"] {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            box-shadow: none;
+        }
+        .answer-option-row input[type="text"]:focus {
+            box-shadow: none;
+        }
+
         @media (max-width: 576px) {
             body { padding: 10px 5px; }
             .container { padding: 20px 15px; }
@@ -397,12 +425,26 @@
         <textarea id="commentsList" placeholder="التعليق الأول&#10;التعليق الثاني"></textarea>
     </div>
 
+    <!-- قسم معاينة وتنسيق خانات الإجابات المجاورة -->
+    <div class="form-group">
+        <label>خيارات الإجابات المتاحة (خانة الاختيار بجانب الإجابة مباشرة):</label>
+        <div id="answersOptionsContainer">
+            <div class="answer-option-row">
+                <input type="radio" name="examChoice" checked title="حدد الإجابة الصحيحة">
+                <input type="text" placeholder="اكتب نص الإجابة الأولى هنا..." value="الإجابة الأولى">
+            </div>
+            <div class="answer-option-row">
+                <input type="radio" name="examChoice" title="حدد الإجابة الصحيحة">
+                <input type="text" placeholder="اكتب نص الإجابة الثانية هنا..." value="الإجابة الثانية">
+            </div>
+        </div>
+    </div>
+
     <div class="row-grid">
         <div class="form-group">
             <label for="limitCount">الحد الأقصى للحسابات المُراد تنفيذها:</label>
             <input type="number" id="limitCount" value="5" min="1">
         </div>
-        <!-- إضافة خانات الفلترة السحابية للطلاب -->
         <div class="form-group">
             <label for="studentFilter">فلترة النشر (المرحلة/الصف للطلاب):</label>
             <select id="studentFilter">
@@ -415,7 +457,6 @@
         </div>
     </div>
 
-    <!-- قسم حفظ ونشر الامتحانات والواجبات على السحابة -->
     <div class="cloud-section">
         <label style="color: var(--primary); margin-bottom: 10px;">☁️ نظام الحفظ السحابي ونشر الواجبات والامتحانات للطلاب:</label>
         <div class="btn-group" style="margin-top: 5px;">
@@ -614,13 +655,11 @@
         logDiv.scrollTop = logDiv.scrollHeight;
     }
 
-    // وظيفة حفظ ونشر الواجبات والامتحانات على السحابة مع الفلترة
     function saveToCloudStorage() {
         saveCurrentTabDataToMemory();
         let currentData = tabsData[currentTab];
         let selectedFilter = document.getElementById('studentFilter').value;
 
-        // تجهيز حزمة البيانات السحابية (قابلة للربط بقاعدة بيانات خارجية مثل Firebase أو API سحابي)
         let cloudPackage = {
             tabName: currentTab,
             filterGroup: selectedFilter,
@@ -628,7 +667,6 @@
             timestamp: new Date().toISOString()
         };
 
-        // محاكاة الاتصال بالسحابة وحفظها في التخزين السحابي المشترك
         localStorage.setItem(`cloud_published_${currentTab}_${selectedFilter}`, JSON.stringify(cloudPackage));
         
         logMessage(`[السحابة] تم رفع وحفظ الامتحانات والواجبات الخاصة بـ (${currentTab}) بنجاح.`);
@@ -636,7 +674,6 @@
         document.getElementById('noticeMsg').innerText = `تم الحفظ السحابي ونشر المحتوى بنجاح للطلاب (فلترة: ${selectedFilter}) ✓`;
     }
 
-    // وظيفة جلب البيانات من السحابة
     function fetchCloudData() {
         let selectedFilter = document.getElementById('studentFilter').value;
         let cloudDataRaw = localStorage.getItem(`cloud_published_${currentTab}_${selectedFilter}`);
@@ -651,7 +688,6 @@
         }
     }
 
-    // محرك التشغيل الآلي التلقائي المتكامل
     function startAutomationEngine() {
         saveCurrentTabDataToMemory();
         let currentData = tabsData[currentTab];
@@ -683,15 +719,12 @@
 
             logMessage(`[آلي] فتح النافذة الآلية بالحساب (${acc.email})...`);
 
-            // فتح نافذة تفاعلية جديدة وإرسال إشارات التشغيل الآلي
             let automationWindow = window.open(currentData.url, '_blank');
 
-            // محاكاة التنفيذ الآلي التدريجي بعد تحميل الصفحة
             setTimeout(() => {
                 logMessage(`[تنفيذ] تم تطبيق التفاعل (${currentData.reaction}) وإرسال التعليق للحساب: ${acc.email}`);
                 index++;
                 
-                // الانتقال التلقائي للحساب التالي بعد فاصل زمني آمن
                 setTimeout(processNextAutomationStep, 4000);
             }, 5000);
         }
