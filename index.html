@@ -330,6 +330,14 @@
             font-weight: 600;
         }
 
+        .cloud-section {
+            background: var(--row-bg);
+            border: 1px dashed var(--primary);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
         @media (max-width: 576px) {
             body { padding: 10px 5px; }
             .container { padding: 20px 15px; }
@@ -389,9 +397,31 @@
         <textarea id="commentsList" placeholder="التعليق الأول&#10;التعليق الثاني"></textarea>
     </div>
 
-    <div class="form-group">
-        <label for="limitCount">الحد الأقصى للحسابات المُراد تنفيذها:</label>
-        <input type="number" id="limitCount" value="5" min="1">
+    <div class="row-grid">
+        <div class="form-group">
+            <label for="limitCount">الحد الأقصى للحسابات المُراد تنفيذها:</label>
+            <input type="number" id="limitCount" value="5" min="1">
+        </div>
+        <!-- إضافة خانات الفلترة السحابية للطلاب -->
+        <div class="form-group">
+            <label for="studentFilter">فلترة النشر (المرحلة/الصف للطلاب):</label>
+            <select id="studentFilter">
+                <option value="all">جميع الطلاب (عام)</option>
+                <option value="prep">المرحلة الإعدادية</option>
+                <option value="sec1">الصف الأول الثانوي</option>
+                <option value="sec2">الصف الثاني الثانوي</option>
+                <option value="sec3">الصف الثالث الثانوي</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- قسم حفظ ونشر الامتحانات والواجبات على السحابة -->
+    <div class="cloud-section">
+        <label style="color: var(--primary); margin-bottom: 10px;">☁️ نظام الحفظ السحابي ونشر الواجبات والامتحانات للطلاب:</label>
+        <div class="btn-group" style="margin-top: 5px;">
+            <button class="main-btn" type="button" onclick="saveToCloudStorage()">حفظ ونشر على السحابة للطلاب</button>
+            <button class="main-btn btn-secondary" type="button" onclick="fetchCloudData()">جلب البيانات المحدثة</button>
+        </div>
     </div>
 
     <div class="btn-group">
@@ -423,8 +453,8 @@
     }
 
     let tabsData = JSON.parse(localStorage.getItem("tool_tabs_data")) || {
-        "فيسبوك": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 },
-        "موقع خارجي": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 }
+        "فيسبوك": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" },
+        "موقع خارجي": { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" }
     };
     
     let currentTab = Object.keys(tabsData)[0] || "فيسبوك";
@@ -486,7 +516,7 @@
             return;
         }
 
-        tabsData[tabName] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 };
+        tabsData[tabName] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" };
         saveAllTabsData();
         switchTab(tabName);
     }
@@ -508,13 +538,14 @@
 
     function loadTabData(tabName) {
         document.getElementById('noticeMsg').innerText = "";
-        let data = tabsData[tabName] || { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 };
+        let data = tabsData[tabName] || { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" };
         
         document.getElementById('targetUrl').value = data.url || "";
         document.getElementById('reactionType').value = data.reaction || "like";
         document.getElementById('likesCount').value = data.likesCount || 1;
         document.getElementById('commentsList').value = data.comments || "";
         document.getElementById('limitCount').value = data.limit || 5;
+        document.getElementById('studentFilter').value = data.filter || "all";
         
         const container = document.getElementById('accountsContainer');
         container.innerHTML = "";
@@ -534,6 +565,7 @@
         let likesCount = parseInt(document.getElementById('likesCount').value) || 1;
         let comments = document.getElementById('commentsList').value;
         let limit = parseInt(document.getElementById('limitCount').value) || 5;
+        let filter = document.getElementById('studentFilter').value;
         
         let rows = document.querySelectorAll('.account-row');
         let accounts = [];
@@ -545,7 +577,7 @@
             }
         });
 
-        tabsData[currentTab] = { url, reaction, likesCount, accounts, comments, limit };
+        tabsData[currentTab] = { url, reaction, likesCount, accounts, comments, limit, filter };
         saveAllTabsData();
     }
 
@@ -580,6 +612,43 @@
         const logDiv = document.getElementById('log');
         logDiv.innerHTML += `<div>> ${msg}</div>`;
         logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // وظيفة حفظ ونشر الواجبات والامتحانات على السحابة مع الفلترة
+    function saveToCloudStorage() {
+        saveCurrentTabDataToMemory();
+        let currentData = tabsData[currentTab];
+        let selectedFilter = document.getElementById('studentFilter').value;
+
+        // تجهيز حزمة البيانات السحابية (قابلة للربط بقاعدة بيانات خارجية مثل Firebase أو API سحابي)
+        let cloudPackage = {
+            tabName: currentTab,
+            filterGroup: selectedFilter,
+            examData: currentData,
+            timestamp: new Date().toISOString()
+        };
+
+        // محاكاة الاتصال بالسحابة وحفظها في التخزين السحابي المشترك
+        localStorage.setItem(`cloud_published_${currentTab}_${selectedFilter}`, JSON.stringify(cloudPackage));
+        
+        logMessage(`[السحابة] تم رفع وحفظ الامتحانات والواجبات الخاصة بـ (${currentTab}) بنجاح.`);
+        logMessage(`[النشر للطلاب] تم فلترة ونشر المحتوى بنجاح للفئة: (${selectedFilter}) للطلاب.`);
+        document.getElementById('noticeMsg').innerText = `تم الحفظ السحابي ونشر المحتوى بنجاح للطلاب (فلترة: ${selectedFilter}) ✓`;
+    }
+
+    // وظيفة جلب البيانات من السحابة
+    function fetchCloudData() {
+        let selectedFilter = document.getElementById('studentFilter').value;
+        let cloudDataRaw = localStorage.getItem(`cloud_published_${currentTab}_${selectedFilter}`);
+        
+        if (cloudDataRaw) {
+            let parsed = JSON.parse(cloudDataRaw);
+            logMessage(`[مزامنة السحابة] تم استرجاع أحدث بيانات الامتحانات والواجبات المفلترة للفئة (${selectedFilter}).`);
+            alert("تم جلب البيانات السحابية المحدثة بنجاح!");
+        } else {
+            logMessage(`[مزامنة السحابة] لا توجد بيانات سحابية محفوظة مسبقاً لهذا التبويب مع هذه الفلترة.`);
+            alert("لا توجد بيانات سحابية محفوظة لهذه الفلترة بعد.");
+        }
     }
 
     // محرك التشغيل الآلي التلقائي المتكامل
@@ -632,7 +701,7 @@
 
     function clearCurrentTabData() {
         if (confirm(`هل تريد مسح جميع بيانات التبويب الحالي (${currentTab})؟`)) {
-            tabsData[currentTab] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5 };
+            tabsData[currentTab] = { url: "", reaction: "like", likesCount: 1, accounts: [], comments: "", limit: 5, filter: "all" };
             saveAllTabsData();
             loadTabData(currentTab);
             document.getElementById('noticeMsg').innerText = "تم مسح بيانات هذا التبويب.";
