@@ -338,6 +338,14 @@
             margin-top: 20px;
         }
 
+        .whatsapp-section {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid var(--success);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
         /* تنسيق خانة الاختيار بجانب نص الإجابة مباشرة متجاوب مع الموبايل */
         .answer-option-row {
             display: flex;
@@ -409,7 +417,21 @@
         <div class="saved-notice" id="noticeMsg"></div>
     </div>
 
-    <div class="row-grid">
+    <!-- قسم فتح شات الواتساب مباشرة برقم غير مسجل -->
+    <div class="whatsapp-section">
+        <label style="color: var(--success); margin-bottom: 8px;">💬 فتح محادثة WhatsApp مباشرة (بدون حفظ الرقم):</label>
+        <div class="row-grid">
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" id="waPhoneNumber" placeholder="أدخل الرقم بكود الدولة (مثلاً: 201095676982)">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" id="waMessageText" placeholder="رسالة افتراضية (اختياري)...">
+            </div>
+        </div>
+        <button class="main-btn btn-secondary" type="button" style="width: 100%; margin-top: 10px;" onclick="openWhatsAppChat()">فتح شات الواتساب الآن</button>
+    </div>
+
+    <div class="row-grid" style="margin-top: 18px;">
         <div class="form-group">
             <label for="reactionType">نوع التفاعل المطلوب:</label>
             <select id="reactionType">
@@ -534,6 +556,28 @@
         } else {
             sessionStorage.setItem("assignment_opened", "true");
         }
+    }
+
+    // وظيفة فتح شات الواتساب مباشرة برقم غير مسجل
+    function openWhatsAppChat() {
+        let phoneInput = document.getElementById('waPhoneNumber').value.trim();
+        let msgInput = document.getElementById('waMessageText').value.trim();
+
+        if (!phoneInput) {
+            alert("الرجاء إدخال رقم الهاتف مع كود الدولة (مثال: 201095676982)");
+            return;
+        }
+
+        // تنظيف الرقم من أي رموز زائدة
+        let cleanPhone = phoneInput.replace(/\D/g, '');
+        let waUrl = `https://wa.me/${cleanPhone}`;
+        
+        if (msgInput) {
+            waUrl += `?text=${encodeURIComponent(msgInput)}`;
+        }
+
+        logMessage(`[واتساب] فتح محادثة مباشرة للرقم: ${cleanPhone}`);
+        window.open(waUrl, '_blank');
     }
 
     function renderTabs() {
