@@ -564,6 +564,8 @@
             <button class="main-btn btn-secondary" type="button" onclick="fetchCloudData()">جلب البيانات المحدثة</button>
             <button class="main-btn" type="button" style="background-color: #d97706;" onclick="hideExamForStudents()">إخفاء عن الطلاب</button>
             <button class="main-btn btn-danger-action" type="button" onclick="deleteExamForStudents()">حذف من عند الطلاب نهائياً</button>
+            <!-- زر جديد خاص بلوحة المعلم لفتح وإلغاء قفل إعادة المحاولة للطالب سحابياً -->
+            <button class="main-btn" type="button" style="background-color: #0284c7;" onclick="teacherUnlockRetryForStudent()">🔓 فتح إعادة المحاولة للطالب</button>
         </div>
     </div>
 
@@ -607,8 +609,11 @@
         renderTabs();
         loadTabData(currentTab);
         
-        // التحقق مما إذا كان الطالب لديه فرصة إعادة المحاولة المتاحة
-        if (localStorage.getItem("allow_exam_retry") === "true") {
+        // التحقق مما إذا كان المعلم قد منح إذن إعادة المحاولة سحابياً للطالب
+        let selectedFilter = document.getElementById('studentFilter').value;
+        let retryAllowedByTeacher = localStorage.getItem(`teacher_unlock_retry_${currentTab}_${selectedFilter}`) === "true";
+
+        if (retryAllowedByTeacher || localStorage.getItem("allow_exam_retry") === "true") {
             enableRetryModeOnLoad();
         } else {
             enforceStrictMobileLock();
@@ -643,7 +648,18 @@
         submitBtn.style.display = "block";
         submitBtn.disabled = false;
         submitBtn.style.opacity = "1";
-        logMessage("[وضع إعادة المحاولة] تم رصد تفعيل فرصة ثانية للطالب، وتم فتح الواجب بنجاح.");
+        logMessage("[وضع إعادة المحاولة] تم تفعيل الفرصة الثانية وإتاحة الواجب للطالب بالكامل.");
+    }
+
+    // وظيفة المعلم لفتح وإلغاء قفل إعادة المحاولة للطالب سحابياً من لوحة التحكم
+    function teacherUnlockRetryForStudent() {
+        let selectedFilter = document.getElementById('studentFilter').value;
+        localStorage.setItem(`teacher_unlock_retry_${currentTab}_${selectedFilter}`, "true");
+        localStorage.setItem("allow_exam_retry", "true");
+        sessionStorage.removeItem("exam_successfully_submitted");
+
+        logMessage(`[لوحة المعلم] تم فتح وإلغاء قفل إعادة المحاولة سحابياً للفئة (${selectedFilter}).`);
+        alert("🔓 تم تفعيل وفتح إعادة المحاولة للطالب بنجاح! سيتمكن من فتح الواجب الآن.");
     }
 
     function submitStudentMandatoryExam() {
@@ -663,26 +679,29 @@
             alert(`للأسف نسبتك هي ${scorePercent}%. يجب أن تحصل على 70% أو أكثر. تم تفعيل زر إعادة المحاولة لك.`);
             retryBtn.style.display = "block";
             submitBtn.style.display = "none";
-            // السماح بفتح الفرصة الثانية للطالب وتخزينها سحابياً ومحلياً
             localStorage.setItem("allow_exam_retry", "true");
             sessionStorage.removeItem("exam_successfully_submitted");
-            logMessage("[إعادة المحاولة] النسبة أقل من 70%، وتم فتح صلاحية إعادة المحاولة للطالب.");
+            logMessage("[إعادة المحاولة] النسبة أقل من 70%، وتم إتاحة الفرصة الثانية للطالب.");
         } else {
             sessionStorage.setItem("exam_successfully_submitted", "true");
             localStorage.removeItem("allow_exam_retry");
+            let selectedFilter = document.getElementById('studentFilter').value;
+            localStorage.removeItem(`teacher_unlock_retry_${currentTab}_${selectedFilter}`);
+            
             window.onpopstate = null;
             window.onbeforeunload = null;
-            alert(`مبروك! لقد اجتازت الامتحان بنسبة ${scorePercent}%. تم التسليم بنجاح.`);
+            alert(`مبروك! لقد اجتازت الامتحان بنسبة ${scorePercent}%. تم التسليم بنجاح وفتح الواجبات التالية.`);
             submitBtn.disabled = true;
             submitBtn.style.opacity = "0.6";
-            logMessage("[اجتياز ناجح] تم تسليم الامتحان بنجاح تام.");
+            logMessage("[اجتياز ناجح] تم تسليم الامتحان بنجاح تام وانتقال الطالب للمستوى التالي.");
         }
     }
 
     function retryExamAction() {
-        // مسح حالة القفل ومنح الصلاحية الكاملة للطالب لإعادة الحل
         localStorage.removeItem("allow_exam_retry");
         sessionStorage.removeItem("exam_successfully_submitted");
+        let selectedFilter = document.getElementById('studentFilter').value;
+        localStorage.removeItem(`teacher_unlock_retry_${currentTab}_${selectedFilter}`);
         
         document.getElementById('resultDisplayBox').style.display = "none";
         document.getElementById('retryExamBtn').style.display = "none";
@@ -694,7 +713,7 @@
         document.getElementById('choice1').checked = true;
         
         enforceStrictMobileLock();
-        logMessage("[إعادة المحاولة] قام الطالب ببدء الفرصة الثانية وفتح الواجب بنجاح.");
+        logMessage("[إعادة المحاولة] بدأ الطالب الفرصة الثانية وتم فتح الواجب بنجاح.");
         alert("تم فتح الواجب للفرصة الثانية، قم بالإجابة ثم اضغط على زر التسليم.");
     }
 
