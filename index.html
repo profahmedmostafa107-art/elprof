@@ -537,7 +537,7 @@
         <button type="button" class="mandatory-submit-btn" id="submitExamBtn" onclick="submitStudentMandatoryExam()">تسليم الإجابات النهائية للواجب</button>
         
         <div class="result-box" id="resultDisplayBox"></div>
-        <button type="button" class="retry-btn" id="retryExamBtn" onclick="retryExamAction()">🔄 إعادة محاولة الامتحان (أقل من 70%)</button>
+        <button type="button" class="retry-btn" id="retryExamBtn" onclick="retryExamAction()">🔄 إعادة محاولة الامتحان (فرصة ثانية)</button>
     </div>
 
     <div class="row-grid" style="margin-top: 18px;">
@@ -606,17 +606,25 @@
         initTheme();
         renderTabs();
         loadTabData(currentTab);
-        enforceStrictMobileLock();
+        
+        // التحقق مما إذا كان الطالب لديه فرصة إعادة المحاولة المتاحة
+        if (localStorage.getItem("allow_exam_retry") === "true") {
+            enableRetryModeOnLoad();
+        } else {
+            enforceStrictMobileLock();
+        }
     };
 
     function enforceStrictMobileLock() {
+        if (sessionStorage.getItem("exam_successfully_submitted")) return;
+
         history.pushState(null, null, window.location.href);
         history.pushState(null, null, window.location.href);
 
         window.onpopstate = function () {
             history.pushState(null, null, window.location.href);
             alert("⚠️ تنبيه أمني: ممنوع الرجوع أو مغادرة صفحة الامتحان قبل تسليم الإجابات النهائية!");
-            logMessage("[حظر الهواتف] حاول الطالب التراجع للخلف من الهاتف وتم منع الإجراء بنجاح.");
+            logMessage("[حظر الهواتف] حاول الطالب التراجع للخلف وتم منع الإجراء.");
         };
 
         window.onbeforeunload = function (e) {
@@ -626,6 +634,16 @@
                 return e.returnValue;
             }
         };
+    }
+
+    function enableRetryModeOnLoad() {
+        document.getElementById('resultDisplayBox').style.display = "none";
+        document.getElementById('retryExamBtn').style.display = "none";
+        let submitBtn = document.getElementById('submitExamBtn');
+        submitBtn.style.display = "block";
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "1";
+        logMessage("[وضع إعادة المحاولة] تم رصد تفعيل فرصة ثانية للطالب، وتم فتح الواجب بنجاح.");
     }
 
     function submitStudentMandatoryExam() {
@@ -642,23 +660,30 @@
         logMessage(`[تصحيح آلي] حصل الطالب على نسبة: ${scorePercent}%`);
 
         if (scorePercent < 70) {
-            alert(`للأسف نسبتك هي ${scorePercent}%. يجب أن تحصل على 70% أو أكثر. يرجى إعادة محاولة الامتحان.`);
+            alert(`للأسف نسبتك هي ${scorePercent}%. يجب أن تحصل على 70% أو أكثر. تم تفعيل زر إعادة المحاولة لك.`);
             retryBtn.style.display = "block";
             submitBtn.style.display = "none";
-            logMessage("[إعادة محاولة] النسبة أقل من 70%، وتم إظهار زر إعادة المحاولة للطالب.");
+            // السماح بفتح الفرصة الثانية للطالب وتخزينها سحابياً ومحلياً
+            localStorage.setItem("allow_exam_retry", "true");
+            sessionStorage.removeItem("exam_successfully_submitted");
+            logMessage("[إعادة المحاولة] النسبة أقل من 70%، وتم فتح صلاحية إعادة المحاولة للطالب.");
         } else {
             sessionStorage.setItem("exam_successfully_submitted", "true");
+            localStorage.removeItem("allow_exam_retry");
             window.onpopstate = null;
             window.onbeforeunload = null;
             alert(`مبروك! لقد اجتازت الامتحان بنسبة ${scorePercent}%. تم التسليم بنجاح.`);
             submitBtn.disabled = true;
             submitBtn.style.opacity = "0.6";
-            logMessage("[اجتياز ناجح] تم تسليم الامتحان بنجاح تام وإلغاء قيود القفل.");
+            logMessage("[اجتياز ناجح] تم تسليم الامتحان بنجاح تام.");
         }
     }
 
-    // تصحيح دالة إعادة المحاولة لتفتح الواجب وتمكن الطالب من التفاعل مجدداً
     function retryExamAction() {
+        // مسح حالة القفل ومنح الصلاحية الكاملة للطالب لإعادة الحل
+        localStorage.removeItem("allow_exam_retry");
+        sessionStorage.removeItem("exam_successfully_submitted");
+        
         document.getElementById('resultDisplayBox').style.display = "none";
         document.getElementById('retryExamBtn').style.display = "none";
         let submitBtn = document.getElementById('submitExamBtn');
@@ -666,11 +691,11 @@
         submitBtn.disabled = false;
         submitBtn.style.opacity = "1";
         
-        // إعادة تهيئة خيارات الإجابات لتكون مفعلة ومتاحة للطالب
         document.getElementById('choice1').checked = true;
         
-        logMessage("[إعادة المحاولة] تم فتح وإعادة إتاحة الواجب للطالب ليقوم بالحل من جديد.");
-        alert("تم فتح الواجب مجدداً، قم بالإجابة ثم اضغط على زر التسليم.");
+        enforceStrictMobileLock();
+        logMessage("[إعادة المحاولة] قام الطالب ببدء الفرصة الثانية وفتح الواجب بنجاح.");
+        alert("تم فتح الواجب للفرصة الثانية، قم بالإجابة ثم اضغط على زر التسليم.");
     }
 
     function openWhatsAppChat() {
