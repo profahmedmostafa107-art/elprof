@@ -416,6 +416,34 @@
             background-color: var(--success-hover);
         }
 
+        /* تنسيق نتيجة النسبة المئوية وزر إعادة المحاولة التلقائي */
+        .result-box {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            font-weight: 700;
+            display: none;
+        }
+        .retry-btn {
+            background-color: #d97706;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+            font-family: 'Cairo', sans-serif;
+        }
+        .retry-btn:hover {
+            background-color: #b45309;
+        }
+
         @media (max-width: 576px) {
             body { padding: 10px 5px; }
             .container { padding: 20px 15px; }
@@ -494,19 +522,24 @@
         <div id="answersOptionsContainer">
             <div class="answer-option-row">
                 <input type="radio" name="examChoice" id="choice1" checked>
-                <label for="choice1"><input type="text" value="الإجابة الأولى"></label>
+                <label for="choice1"><input type="text" value="الإجابة الأولى (صحيحة)"></label>
             </div>
             <div class="answer-option-row">
                 <input type="radio" name="examChoice" id="choice2">
-                <label for="choice2"><input type="text" value="الإجابة الثانية"></label>
+                <label for="choice2"><input type="text" value="الإجابة الثانية (خاطئة)"></label>
             </div>
         </div>
     </div>
 
+    <!-- نافذة الطالب الإجبارية مع عرض النسبة المئوية وإعادة المحاولة التلقائية للموبايل -->
     <div class="student-exam-box">
-        <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 وضع الامتحان الإجباري للطلاب:</label>
-        <p style="font-size: 0.85rem; color: var(--danger); font-weight: 600; margin-top: 0;">⚠️ تم قفل التنقل وزر العودة نهائياً. لا يمكن الخروج إلا بالضغط على زر التسليم النهائي.</p>
-        <button type="button" class="mandatory-submit-btn" onclick="submitStudentMandatoryExam()">تسليم الإجابات النهائية للواجب</button>
+        <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 نظام الامتحان الذكي والتصحيح الآلي للطلاب:</label>
+        <p style="font-size: 0.85rem; color: var(--danger); font-weight: 600; margin-top: 0;">⚠️ ممنوع الخروج من الصفحة أو التراجع حتى يتم إرسال وتسليم إجاباتك.</p>
+        
+        <button type="button" class="mandatory-submit-btn" id="submitExamBtn" onclick="submitStudentMandatoryExam()">تسليم الإجابات النهائية للواجب</button>
+        
+        <div class="result-box" id="resultDisplayBox"></div>
+        <button type="button" class="retry-btn" id="retryExamBtn" onclick="retryExamAction()">🔄 إعادة محاولة الامتحان (أقل من 70%)</button>
     </div>
 
     <div class="row-grid" style="margin-top: 18px;">
@@ -575,49 +608,68 @@
         initTheme();
         renderTabs();
         loadTabData(currentTab);
-        checkAssignmentAutoSubmitOnRefresh();
-        enforceStrictExamLock();
+        enforceStrictMobileLock();
     };
 
-    // نظام قفل صارم يمنع الرجوع ويجبر الطالب على البقاء في صفحة الامتحان
-    function enforceStrictExamLock() {
-        // ملء سجل المتصفح وهمياً لمنع زر العودة
+    // نظام قفل أمني شامل لمنع الهواتف والمتصفحات من التراجع والخروج نهائياً
+    function enforceStrictMobileLock() {
         history.pushState(null, null, window.location.href);
         history.pushState(null, null, window.location.href);
-        
+
         window.onpopstate = function () {
             history.pushState(null, null, window.location.href);
-            alert("⚠️ تنبيه أمني: لا يمكنك الخروج من الامتحان أو التراجع قبل تسليم الإجابات النهائية!");
-            logMessage("[قفل صارم] تم رصد محاولة خروج أو تراجع للطالب وتم منعها بنجاح.");
+            alert("⚠️ تنبيه أمني: ممنوع الرجوع أو مغادرة صفحة الامتحان قبل تسليم الإجابات النهائية!");
+            logMessage("[حظر الهواتف] حاول الطالب التراجع للخلف من الهاتف وتم منع الإجراء بنجاح.");
         };
 
-        // منع إغلاق الصفحة أو مغادرتها بدون تسليم
         window.onbeforeunload = function (e) {
-            if (!sessionStorage.getItem("assignment_submitted")) {
+            if (!sessionStorage.getItem("exam_successfully_submitted")) {
                 e.preventDefault();
-                e.returnValue = "لم تقم بتسليم الإجابات النهائية بعد!";
+                e.returnValue = "يجب تسليم الامتحانات أولاً!";
                 return e.returnValue;
             }
         };
     }
 
-    function checkAssignmentAutoSubmitOnRefresh() {
-        let sessionOpened = sessionStorage.getItem("assignment_opened");
-        if (sessionOpened && !sessionStorage.getItem("assignment_submitted")) {
-            sessionStorage.setItem("assignment_submitted", "true");
-            logMessage("[تسليم تلقائي] قام الطالب بعمل تحديث (Refresh) للصفحة وتم تسليم الواجب بنجاح سحابياً!");
+    // دالة تسليم الواجب أو الامتحان مع حساب النسبة المئوية وتفعيل زر إعادة المحاولة تلقائياً إذا كانت أقل من 70%
+    function submitStudentMandatoryExam() {
+        // حساب النسبة المئوية (محاكاة ذكية لاختيار الطالب استناداً إلى زر الاختيار المحدد)
+        let choice1 = document.getElementById('choice1');
+        let scorePercent = choice1.checked ? 100 : 40; // إذا اختار الأولى يحصل على 100% وإلا 40% للتجربة
+
+        let resultBox = document.getElementById('resultDisplayBox');
+        let retryBtn = document.getElementById('retryExamBtn');
+        let submitBtn = document.getElementById('submitExamBtn');
+
+        resultBox.style.display = "block";
+        resultBox.innerHTML = `النتيجة النهائية: <span style="color: ${scorePercent >= 70 ? 'var(--success)' : 'var(--danger)'};">${scorePercent}%</span>`;
+
+        logMessage(`[تصحيح آلي] حصل الطالب على نسبة: ${scorePercent}%`);
+
+        if (scorePercent < 70) {
+            alert(`للأسف نسبتك هي ${scorePercent}%. يجب أن تحصل على 70% أو أكثر. يرجى إعادة محاولة الامتحان.`);
+            retryBtn.style.display = "block";
+            submitBtn.style.display = "none";
+            logMessage("[إعادة محاولة] النسبة أقل من 70%، وتم إظهار زر إعادة المحاولة للطالب.");
         } else {
-            sessionStorage.setItem("assignment_opened", "true");
+            sessionStorage.setItem("exam_successfully_submitted", "true");
+            window.onpopstate = null;
+            window.onbeforeunload = null;
+            alert(`مبروك! لقد اجتازت الامتحان بنسبة ${scorePercent}%. تم التسليم بنجاح.`);
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.6";
+            logMessage("[اجتياز ناجح] تم تسليم الامتحان بنجاح تام وإلغاء قيود القفل.");
         }
     }
 
-    function submitStudentMandatoryExam() {
-        sessionStorage.setItem("assignment_submitted", "true");
-        // إلغاء القيود الأمنية مؤقتاً عند التسليم الصحيح ليتمكن الطالب من إغلاق الصفحة بأمان
-        window.onpopstate = null;
-        window.onbeforeunload = null;
-        logMessage("[تسليم إجباري] تم إرسال وتسليم إجابات الواجب النهائية بنجاح للطالب.");
-        alert("تم تسليم الإجابات النهائية للواجب بنجاح! شكراً لك.");
+    // دالة إعادة المحاولة للطالب الحاصل على أقل من 70%
+    function retryExamAction() {
+        document.getElementById('resultDisplayBox').style.display = "none";
+        document.getElementById('retryExamBtn').style.display = "none";
+        document.getElementById('submitExamBtn').style.display = "block";
+        document.getElementById('choice1').checked = true;
+        logMessage("[إعادة محاولة] قام الطالب بإعادة محاولة الامتحان من جديد.");
+        alert("تمت إعادة ضبط الامتحان، يمكنك المحاولة مرة أخرى الآن.");
     }
 
     function openWhatsAppChat() {
