@@ -99,10 +99,18 @@
             color: var(--text-main);
             font-weight: 700;
             margin-top: 10px;
-            margin-bottom: 25px;
+            margin-bottom: 5px;
             font-size: 1.4rem;
             padding-left: 40px;
             padding-right: 40px;
+        }
+
+        .platform-subtitle {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            font-weight: 600;
         }
 
         h2::after {
@@ -476,6 +484,7 @@
     <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="تبديل الوضع"></button>
 
     <h2>أداة الإدارة الآلية والتفاعلات الذكية</h2>
+    <div class="platform-subtitle">مدرس اللغة العربية: أحمد مصطفى | الهاتف: <span dir="ltr" style="display:inline-block;">01095676982</span></div>
     
     <div class="tabs-header" id="tabsHeader"></div>
 
@@ -548,9 +557,6 @@
 
     <div class="student-exam-box">
         <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 نظام الامتحان الذكي والتصحيح الآلي للطلاب:</label>
-        <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 5px;">
-            مدرس اللغة العربية: أحمد مصطفى | الهاتف: <span dir="ltr" style="display:inline-block;">01095676982</span>
-        </div>
         <p style="font-size: 0.85rem; color: var(--danger); font-weight: 600; margin-top: 0;">⚠️ ممنوع الخروج من الصفحة أو التراجع حتى يتم إرسال وتسليم إجاباتك.</p>
         
         <button type="button" class="mandatory-submit-btn" id="submitExamBtn" onclick="submitStudentMandatoryExam()">تسليم الإجابات النهائية للواجب</button>
@@ -1064,7 +1070,7 @@
                 logMessage(`[تنفيذ] تم تطبيق التفاعل (${currentData.reaction}) وإرسال التعليق للحساب: ${acc.email}`);
                 index++;
                 
-                setTimeout(processNextAutomationStep, 4000);
+                setTimeout(processNextAutomationLine, 4000);
             }, 5000);
         }
 
