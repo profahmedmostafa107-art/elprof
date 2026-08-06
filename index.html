@@ -507,7 +507,7 @@
         <label style="color: var(--success); margin-bottom: 8px;">💬 فتح محادثة WhatsApp مباشرة (بدون حفظ الرقم):</label>
         <div class="row-grid">
             <div class="form-group" style="margin-bottom: 0;">
-                <input type="text" id="waPhoneNumber" placeholder="أدخل الرقم بكود الدولة (مثلاً: 201095676982)">
+                <input type="text" id="waPhoneNumber" placeholder="أدخل الرقم (مثلاً: 01095676982)">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <input type="text" id="waMessageText" placeholder="رسالة افتراضية (اختياري)...">
@@ -787,7 +787,7 @@
         let msgInput = document.getElementById('waMessageText').value.trim();
 
         if (!phoneInput) {
-            alert("الرجاء إدخال رقم الهاتف (مثلاً: 01095676982 أو بكود الدولة)");
+            alert("الرجاء إدخال رقم الهاتف (مثلاً: 01095676982)");
             return;
         }
 
@@ -799,14 +799,14 @@
             cleanPhone = '20' + cleanPhone;
         }
 
-        // استخدام رابط API المباشر للمتصفح لفتح المحادثة والرسالة بشكل مؤكد
-        let waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}`;
+        // استخدام الويب الرسمي (Web API) وهو الطريقة التي تفتح أي رقم غريب أو غير مسجل بدون مشاكل
+        let waUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}`;
         
         if (msgInput) {
             waUrl += `&text=${encodeURIComponent(msgInput)}`;
         }
 
-        logMessage(`[واتساب] فتح محادثة مباشرة للرقم: ${cleanPhone}`);
+        logMessage(`[واتساب] فتح محادثة الويب للرقم غير المسجل: ${cleanPhone}`);
 
         let tempLink = document.createElement('a');
         tempLink.href = waUrl;
