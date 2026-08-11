@@ -504,10 +504,10 @@
     </div>
 
     <div class="whatsapp-section">
-        <label style="color: var(--success); margin-bottom: 8px;">💬 فتح محادثة WhatsApp مباشرة (بدون حفظ الرقم):</label>
+        <label style="color: var(--success); margin-bottom: 8px;">💬 فتح محادثة WhatsApp مباشرة (يدعم الرقم بكود الدولة أو بدونه):</label>
         <div class="row-grid">
             <div class="form-group" style="margin-bottom: 0;">
-                <input type="text" id="waPhoneNumber" placeholder="أدخل الرقم (مثلاً: 01095676982)">
+                <input type="text" id="waPhoneNumber" placeholder="أدخل الرقم (مثلاً: 01095676982 أو 201095676982)">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <input type="text" id="waMessageText" placeholder="رسالة افتراضية (اختياري)...">
@@ -568,6 +568,13 @@
         <label style="color: var(--primary); font-size: 1rem; margin-bottom: 5px;">📝 نظام الامتحان الذكي والتصحيح الآلي للطلاب:</label>
         <p style="font-size: 0.85rem; color: var(--danger); font-weight: 600; margin-top: 0;">⚠️ ممنوع الخروج من الصفحة أو التراجع حتى يتم إرسال وتسليم إجاباتك.</p>
         
+        <!-- قسم التقييمات والإحصائيات المطلوبة -->
+        <div id="examStatsBox" style="background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 0.9rem; font-weight: 600; text-align: right; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px;">
+            <div>📊 التقـييم الحالي: <span id="statRatingScore" style="color: var(--primary);">ممتاز</span></div>
+            <div>✅ أدو الامتحان: <span id="statDoneCount" style="color: var(--success);">0</span></div>
+            <div>❌ لم يودوا الامتحان: <span id="statNotDoneCount" style="color: var(--danger);">0</span></div>
+        </div>
+
         <button type="button" class="mandatory-submit-btn" id="submitExamBtn" onclick="submitStudentMandatoryExam()">تسليم الإجابات النهائية للواجب</button>
         
         <button type="button" class="return-back-btn" id="returnBackBtn" title="زر العودة معطل أثناء الحل لمنع الخروج">العودة (معطل أثناء حل الواجب)</button>
@@ -583,7 +590,7 @@
         </div>
         <div class="form-group">
             <label for="studentFilter">فلترة النشر (المرحلة/الصف للطلاب):</label>
-            <select id="studentFilter">
+            <select id="studentFilter" onchange="updateExamStatistics()">
                 <option value="all">جميع الطلاب (عام)</option>
                 <option value="prep">المرحلة الإعدادية</option>
                 <option value="sec1">الصف الأول الثانوي</option>
@@ -645,6 +652,7 @@
         initTheme();
         renderTabs();
         loadTabData(currentTab);
+        updateExamStatistics();
         
         let selectedFilter = document.getElementById('studentFilter').value;
         let retryAllowedByTeacher = localStorage.getItem(`teacher_unlock_retry_${currentTab}_${selectedFilter}`) === "true";
@@ -656,6 +664,26 @@
             enforceStrictMobileLock();
         }
     };
+
+    function updateExamStatistics() {
+        let filter = document.getElementById('studentFilter').value;
+        let submittedKey = `exam_submitted_list_${currentTab}_${filter}`;
+        let submittedList = JSON.parse(localStorage.getItem(submittedKey)) || [];
+        
+        let doneCount = submittedList.length;
+        // نفترض عدد إجمالي افتراضي للطلاب بكل فئة مثلاً 30 طالب كقاعدة حسابية، ويمكن تعديله
+        let totalStudents = 30; 
+        let notDoneCount = Math.max(0, totalStudents - doneCount);
+
+        let ratingText = "ممتاز (A)";
+        let scoreRate = doneCount > 0 ? (doneCount / totalStudents) * 100 : 0;
+        if (scoreRate < 40) ratingText = "يحتاج متابعة";
+        else if (scoreRate < 75) ratingText = "جيد جداً";
+
+        document.getElementById('statRatingScore').innerText = ratingText;
+        document.getElementById('statDoneCount').innerText = doneCount;
+        document.getElementById('statNotDoneCount').innerText = notDoneCount;
+    }
 
     function enforceStrictMobileLock() {
         if (sessionStorage.getItem("exam_successfully_submitted")) return;
@@ -742,6 +770,16 @@
             localStorage.removeItem(`teacher_unlock_retry_${currentTab}_${selectedFilter}`);
             localStorage.removeItem(`exam_score_reset_${currentTab}_${selectedFilter}`);
             
+            // تسجيل الطالب في قائمة من أدوا الامتحان
+            let submittedKey = `exam_submitted_list_${currentTab}_${selectedFilter}`;
+            let submittedList = JSON.parse(localStorage.getItem(submittedKey)) || [];
+            let studentIdentifier = "طالب_" + Date.now();
+            if (!submittedList.includes(studentIdentifier)) {
+                submittedList.push(studentIdentifier);
+                localStorage.setItem(submittedKey, JSON.stringify(submittedList));
+            }
+            updateExamStatistics();
+
             window.onpopstate = null;
             window.onbeforeunload = null;
             
@@ -791,8 +829,10 @@
             return;
         }
 
+        // تنظيف المدخلات واستخراج الأرقام فقط
         let cleanPhone = phoneInput.replace(/\D/g, '');
 
+        // المعالجة الشاملة سواء كتب المستخدم الرقم برمز الدولة (مثل 20) أم بدون (مثل 010...)
         if (cleanPhone.startsWith('0')) {
             cleanPhone = '20' + cleanPhone.substring(1);
         } else if (cleanPhone.length === 10 && !cleanPhone.startsWith('20')) {
@@ -806,7 +846,7 @@
             waUrl += `&text=${encodeURIComponent(msgInput)}`;
         }
 
-        logMessage(`[واتساب] فتح محادثة الويب للرقم غير المسجل: ${cleanPhone}`);
+        logMessage(`[واتساب] فتح محادثة الويب للرقم: ${cleanPhone}`);
 
         let tempLink = document.createElement('a');
         tempLink.href = waUrl;
@@ -855,6 +895,7 @@
         currentTab = tabName;
         renderTabs();
         loadTabData(currentTab);
+        updateExamStatistics();
     }
 
     function addNewTab() {
@@ -913,6 +954,7 @@
             addAccountRow();
         }
         updateAccountsCount();
+        updateExamStatistics();
     }
 
     function saveCurrentTabDataToMemory() {
@@ -990,6 +1032,7 @@
         
         logMessage(`[السحابة] تم رفع ونشر الامتحانات والواجبات الخاصة بـ (${currentTab}) بنجاح للطلاب.`);
         document.getElementById('noticeMsg').innerText = `تم الحفظ السحابي ونشر المحتوى بنجاح للطلاب ✓`;
+        updateExamStatistics();
     }
 
     function hideExamForStudents() {
@@ -1054,6 +1097,7 @@
             logMessage(`[مزامنة السحابة] لا توجد بيانات سحابية محفوظة مسبقاً لهذا التبويب مع هذه الفلترة.`);
             alert("لا توجد بيانات سحابية محفوظة لهذه الفلترة بعد.");
         }
+        updateExamStatistics();
     }
 
     function startAutomationEngine() {
